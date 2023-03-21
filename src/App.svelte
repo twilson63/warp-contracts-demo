@@ -3,6 +3,7 @@
   import {
     DeployPlugin,
     InjectedArweaveSigner,
+    // @ts-ignore
   } from "https://unpkg.com/warp-contracts-plugin-deploy@1.0.1/bundles/web.bundle.min.js";
   let arweave, warp;
 
@@ -24,10 +25,13 @@ export function handle(state, action) {
   // });
 
   async function deployContract() {
+    // @ts-ignore
     warp = window.warp.WarpFactory.forMainnet().use(new DeployPlugin());
 
     //console.log(window.arweaveWallet);
+    // @ts-ignore
     if (window.arweaveWallet) {
+      // @ts-ignore
       await window.arweaveWallet.connect([
         "ACCESS_ADDRESS",
         "SIGN_TRANSACTION",
@@ -36,6 +40,7 @@ export function handle(state, action) {
       ]);
     }
 
+    // @ts-ignore
     const userSigner = new InjectedArweaveSigner(window.arweaveWallet);
     await userSigner.setPublicKey();
     const { contractTxId } = await warp.deploy({
@@ -55,9 +60,11 @@ export function handle(state, action) {
   />
   <script src="https://cdn.tailwindcss.com"></script>
   <script
-    src="https://unpkg.com/browse/arweave@1.13.3/bundles/web.bundle.min.js"></script>
+    src="https://unpkg.com/browse/arweave@1.13.3/bundles/web.bundle.min.js"
+  ></script>
   <script
-    src="https://unpkg.com/warp-contracts@1.3.0/bundles/web.iife.bundle.min.js"></script>
+    src="https://unpkg.com/warp-contracts@1.3.0/bundles/web.iife.bundle.min.js"
+  ></script>
 </svelte:head>
 
 <h1 class="mb-16 text-2xl">Deploy Contract Example</h1>
