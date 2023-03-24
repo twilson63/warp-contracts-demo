@@ -1,23 +1,16 @@
 <script>
   import { onMount } from "svelte";
+  import { ArweaveWebWallet } from "arweave-wallet-connector";
+  import { WarpFactory } from "warp-contracts";
   import {
     DeployPlugin,
     InjectedArweaveSigner,
     // @ts-ignore
-  } from "https://unpkg.com/warp-contracts-plugin-deploy@1.0.1/bundles/web.bundle.min.js";
-  let arweave, warp;
+  } from "warp-contracts-plugin-deploy";
 
-  const contractSrc = `
-export function handle(state, action) {
-  if (action.input.function === 'setName') {
-	  ContractAssert(action.input.value, 'Value is Required!')
-	  state['name'] = action.input.value
-    return { state }
-	}
-	new ContractError('function is not set')
-}
-	`;
-  const initialState = { name: "foo" };
+  const warp = WarpFactory.forMainnet().use(new DeployPlugin());
+  const wallet = new ArweaveWebWallet({ name: "Test App" });
+  wallet.setUrl("arweave.app");
 
   // onMount(() => {
   //   arweave = window.Arweave.init({});
@@ -25,9 +18,9 @@ export function handle(state, action) {
   // });
 
   async function deployContract() {
-    // @ts-ignore
-    warp = window.warp.WarpFactory.forMainnet().use(new DeployPlugin());
+    const src = await fetch("/contract-src.js").then((res) => res.text());
 
+    let userSigner = null;
     //console.log(window.arweaveWallet);
     // @ts-ignore
     if (window.arweaveWallet) {
@@ -38,35 +31,32 @@ export function handle(state, action) {
         "ACCESS_PUBLIC_KEY",
         "SIGNATURE",
       ]);
+      userSigner = new InjectedArweaveSigner(window.arweaveWallet);
+    } else {
+      await wallet.connect();
+      userSigner = new InjectedArweaveSigner(wallet.namespaces.arweaveWallet);
     }
+    const address = await window.arweaveWallet.getActiveAddress();
+    const initState = JSON.stringify({ balances: { [address]: 1 * 1e12 } });
 
-    // @ts-ignore
-    const userSigner = new InjectedArweaveSigner(window.arweaveWallet);
     await userSigner.setPublicKey();
-    const { contractTxId } = await warp.deploy({
-      wallet: userSigner,
-      initState: JSON.stringify(initialState),
-      src: contractSrc,
-    });
-    console.log({ contractTxId });
+    try {
+      const { contractTxId } = await warp.deploy({
+        wallet: userSigner,
+        initState,
+        src,
+      });
+      console.log({ contractTxId });
+    } catch (e) {
+      console.log(e);
+    }
   }
 </script>
 
-<svelte:head>
-  <link
-    href="https://cdn.jsdelivr.net/npm/daisyui@2.51.5/dist/full.css"
-    rel="stylesheet"
-    type="text/css"
-  />
-  <script src="https://cdn.tailwindcss.com"></script>
-  <script
-    src="https://unpkg.com/browse/arweave@1.13.3/bundles/web.bundle.min.js"
-  ></script>
-  <script
-    src="https://unpkg.com/warp-contracts@1.3.0/bundles/web.iife.bundle.min.js"
-  ></script>
-</svelte:head>
+<div class="hero min-h-screen">
+  <div class="hero-content flex-col">
+    <h1 class="mb-16 text-2xl">Deploy Contract Example</h1>
 
-<h1 class="mb-16 text-2xl">Deploy Contract Example</h1>
-
-<button class="btn" on:click={deployContract}>Deploy</button>
+    <button class="btn" on:click={deployContract}>Deploy</button>
+  </div>
+</div>
