@@ -5,7 +5,7 @@ export function handle(state, action) {
     ContractAssert(input.target, 'Target is required to transfer')
     ContractAssert(Number.isInteger(input.qty), 'Qty should be an number!')
     ContractAssert(state.balances[action.caller], 'Caller must have balance!')
-
+    ContractAssert(state.balances[action.caller] > input.qty, 'Not enough tokens to transfer!')
     // if action caller balance is not defined set to zero
     if (state.balances[action.caller] === undefined || state.balances[action.caller] === null) {
       state.balances[action.caller] = 0
@@ -23,6 +23,11 @@ export function handle(state, action) {
     }
 
     return { state }
+  }
+
+  if (input.function === 'balance') {
+    const target = input.target || action.caller
+    return { result: { target, balance: state.balances[target] } }
   }
   throw new ContractError('function not found!')
 }

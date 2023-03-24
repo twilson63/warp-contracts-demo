@@ -8,6 +8,7 @@
     // @ts-ignore
   } from "warp-contracts-plugin-deploy";
 
+  let name, ticker, created;
   const warp = WarpFactory.forMainnet().use(new DeployPlugin());
   const wallet = new ArweaveWebWallet({ name: "Test App" });
   wallet.setUrl("arweave.app");
@@ -37,7 +38,11 @@
       userSigner = new InjectedArweaveSigner(wallet.namespaces.arweaveWallet);
     }
     const address = await window.arweaveWallet.getActiveAddress();
-    const initState = JSON.stringify({ balances: { [address]: 1 * 1e12 } });
+    const initState = JSON.stringify({
+      balances: { [address]: 1 * 1e12 },
+      name,
+      ticker: ticker.toUpperCase(),
+    });
 
     await userSigner.setPublicKey();
     try {
@@ -46,6 +51,7 @@
         initState,
         src,
       });
+      created = contractTxId;
       console.log({ contractTxId });
     } catch (e) {
       console.log(e);
@@ -55,8 +61,28 @@
 
 <div class="hero min-h-screen">
   <div class="hero-content flex-col">
-    <h1 class="mb-16 text-2xl">Deploy Contract Example</h1>
+    {#if !created}
+      <h1 class="mb-16 text-2xl">Create "Permaweb SmartWeave Token" PST</h1>
 
-    <button class="btn" on:click={deployContract}>Deploy</button>
+      <input
+        class="input input-bordered"
+        type="text"
+        bind:value={name}
+        placeholder="name"
+        required
+      />
+      <input
+        class="input input-bordered"
+        type="text"
+        bind:value={ticker}
+        placeholder="ticker symbol"
+        required
+      />
+
+      <button class="btn" on:click={deployContract}>Deploy</button>
+    {:else}
+      <h1 class="text-4xl">Created {name} ({ticker}) Token!</h1>
+      <div>{created}</div>
+    {/if}
   </div>
 </div>
