@@ -4,29 +4,16 @@
     DeployPlugin,
     InjectedArweaveSigner,
     // @ts-ignore
-  } from "https://unpkg.com/warp-contracts-plugin-deploy@1.0.1/bundles/web.bundle.min.js";
-  let arweave, warp;
+  } from "warp-contracts-plugin-deploy";
 
-  const contractSrc = `
-export function handle(state, action) {
-  if (action.input.function === 'setName') {
-	  ContractAssert(action.input.value, 'Value is Required!')
-	  state['name'] = action.input.value
-    return { state }
-	}
-	new ContractError('function is not set')
-}
-	`;
-  const initialState = { name: "foo" };
+  import { WarpFactory } from "warp-contracts/web";
+  import Arweave from "arweave";
 
-  // onMount(() => {
-  //   arweave = window.Arweave.init({});
-  //   warp = window.warp.WarpFactory.forMainnet().use(new DeployPlugin());
-  // });
+  const arweave = Arweave.init({});
 
-  async function deployContract() {
+  async function writeAction() {
     // @ts-ignore
-    warp = window.warp.WarpFactory.forMainnet().use(new DeployPlugin());
+    warp = WarpFactory.forMainnet().use(new DeployPlugin());
 
     //console.log(window.arweaveWallet);
     // @ts-ignore
@@ -40,15 +27,19 @@ export function handle(state, action) {
       ]);
     }
 
-    // @ts-ignore
-    const userSigner = new InjectedArweaveSigner(window.arweaveWallet);
-    await userSigner.setPublicKey();
-    const { contractTxId } = await warp.deploy({
-      wallet: userSigner,
-      initState: JSON.stringify(initialState),
-      src: contractSrc,
-    });
-    console.log({ contractTxId });
+    const result = await warp
+      .contract("Q8VdatWDqhsXbg-l1lsyLO8pgsnRJlOT5na4tVfod5c")
+      .connect("use_wallet")
+      .writeInteraction(
+        {
+          function: "transfer",
+          target: "0gf7KpDmLMfCq8oqVeQqqJChzRnx0ZOtWsvHfVYKACo",
+          qty: 1 * 1e6,
+        },
+        { disableBundling: true, strict: true }
+      );
+
+    console.log(result);
   }
 </script>
 
@@ -67,6 +58,6 @@ export function handle(state, action) {
   ></script>
 </svelte:head>
 
-<h1 class="mb-16 text-2xl">Deploy Contract Example</h1>
+<h1 class="mb-16 text-2xl">Write Action Example</h1>
 
-<button class="btn" on:click={deployContract}>Deploy</button>
+<button class="btn" on:click={writeAction}>Write Action</button>
